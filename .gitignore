@@ -164,3 +164,12 @@ test/default/verify1
 test/default/xchacha20
 test/js.done
 testing
+
+
+#Added by cargo
+#
+#already existing elements are commented out
+
+/target
+**/*.rs.bk
+Cargo.lock
