@@ -1,0 +1,6 @@
+
+[target.armv7-unknown-linux-gnueabihf]
+linker = "arm-linux-gnueabihf-gcc"
+
+[target.thumbv7em-none-eabihf]
+linker = "arm-none-eabi-gcc"

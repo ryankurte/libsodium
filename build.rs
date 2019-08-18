@@ -39,8 +39,8 @@ fn main() {
         },
     }
 
-    println!("Generating bindings");
-    let bindings = bindgen::Builder::default()
+    // Configure bindings
+    let mut bindings = bindgen::Builder::default()
         .generate_comments(false)
         //.parse_callbacks(Box::new(ignored_macros))
         .use_core()
@@ -49,7 +49,21 @@ fn main() {
         .clang_arg("-Isrc/libsodium/include/sodium")
         .clang_arg(format!("-I{}", &out_path.to_str().unwrap()))
         .clang_arg(format!("-I{}/sodium", &out_path.to_str().unwrap()))
-        .header("src/libsodium/include/sodium.h")
+        .header("src/libsodium/include/sodium.h");
+
+    // Override sysroot if required
+    if let Ok(s) = env::var("SYSROOT") {
+        bindings = bindings.clang_arg(format!("--sysroot={}", s));
+    } else if let Ok(t) = env::var("TARGET") {
+        if t.starts_with("thumb") {
+            bindings = bindings.clang_arg("--sysroot=/usr/lib/arm-none-eabi");
+        } else if t.starts_with("arm") && t.ends_with("hf") {
+            bindings = bindings.clang_arg("--sysroot=/usr/arm-linux-gnueabihf");
+        }
+    }
+
+    // Generate bindings
+    let bindings = bindings
         .generate()
         .expect("Unable to generate bindings");
 
