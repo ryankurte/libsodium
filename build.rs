@@ -1,8 +1,6 @@
 use std::path::PathBuf;
-use std::env;
+use std::{env, error::Error, io::Write as _};
 use std::fs::{File, create_dir};
-use std::error::Error;
-use std::io::Write;
 
 extern crate glob;
 extern crate bindgen;
@@ -26,16 +24,20 @@ fn main() {
     match File::create(&version_path) {
         Err(e) => panic!("Error opening file {}: {}", version_path.display(), e.description()),
         Ok(mut f) => {
-            f.write("
+            f.write(format!("
                 #ifndef sodium_version_H
                 #define sodium_version_H
 
-                #define SODIUM_VERSION_STRING        \"NOPE\"
-                #define SODIUM_LIBRARY_VERSION_MAJOR 0
-                #define SODIUM_LIBRARY_VERSION_MINOR 0
+                #define SODIUM_VERSION_STRING        \"{}\"
+                #define SODIUM_LIBRARY_VERSION_MAJOR {}
+                #define SODIUM_LIBRARY_VERSION_MINOR {}
 
                 #endif
-            ".as_bytes()).unwrap();
+            ", 
+            env::var("CARGO_PKG_VERSION_MAJOR").unwrap(),
+            env::var("CARGO_PKG_VERSION_MAJOR").unwrap(),
+            env::var("CARGO_PKG_VERSION_MINOR").unwrap(),
+            ).as_bytes()).unwrap();
         },
     }
 
@@ -79,10 +81,6 @@ fn main() {
         .write(Box::new(file))
         .expect("Couldn't write bindings!");
 
-    println!("Building {} files", sources.len());
-
-    println!("cargo:rustc-link-lib=static=libsodium");
-
     cc::Build::new()
         .files(sources)
         .include("src/libsodium/include")
@@ -97,5 +95,6 @@ fn main() {
         .flag("-DCONFIGURED=1")     // YOLO CC is unsupported
         .flag("-Wno-everything")
         .compile("libsodium");
-}
 
+    println!("cargo:rustc-link-lib=static=libsodium");
+}
